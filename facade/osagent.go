@@ -33,11 +33,16 @@ func (f *osAgentFacade) ExecuteCommand(req server.Request, resp server.Response)
 		return
 	}
 
-	stdout, stderr, exitCode, _ := f.executor.Execute(*execCommand)
+	stdout, stderr, exitCode, err := f.executor.Execute(*execCommand)
+	var errorString string
+	if err != nil {
+		errorString = err.Error()
+	}
 	commandResp := &CommandResponse{
 		Stdout:   stdout,
 		Stderr:   stderr,
 		ExitCode: exitCode,
+		Error:    errorString,
 	}
 
 	responseBody, err := json.Marshal(commandResp)
