@@ -2,12 +2,13 @@ package facade_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Bo0mer/executor/fakes"
 
+	. "github.com/Bo0mer/os-agent/facade"
 	. "github.com/Bo0mer/os-agent/model"
-	. "github.com/Bo0mer/os-agent/osagent"
 	. "github.com/Bo0mer/os-agent/server/fakes"
 
 	. "github.com/onsi/ginkgo"
@@ -69,7 +70,7 @@ var _ = Describe("OSAgentFacade", func() {
 			Expect(execCmd.Args).To(Equal([]string{"-la"}))
 		})
 
-		Context("and the command execution is finished", func() {
+		Context("when running the command succeeds", func() {
 			BeforeEach(func() {
 				executor.ExecuteReturns("stdout", "stderr", 0, nil)
 			})
@@ -85,6 +86,20 @@ var _ = Describe("OSAgentFacade", func() {
 				Expect(commandResponse.Stdout).To(Equal("stdout"))
 				Expect(commandResponse.Stderr).To(Equal("stderr"))
 				Expect(commandResponse.ExitCode).To(Equal(0))
+				Expect(commandResponse.Error).To(Equal(""))
+			})
+		})
+
+		Context("when running the command fails", func() {
+			BeforeEach(func() {
+				executor.ExecuteReturns("", "", -1, errors.New("error"))
+			})
+
+			It("should return the proper error", func() {
+				commandResponse := &CommandResponse{}
+				json.Unmarshal(resp.SetBodyArgsForCall(0), commandResponse)
+
+				Expect(commandResponse.Error).To(Equal("error"))
 			})
 		})
 
