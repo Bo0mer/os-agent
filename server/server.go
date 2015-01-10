@@ -26,14 +26,21 @@ type server struct {
 
 type Request interface {
 	Body() []byte
+	ParamValues(string) ([]string, bool)
 }
 
 type request struct {
-	body []byte
+	body   []byte
+	params map[string][]string
 }
 
 func (r *request) Body() []byte {
 	return r.body
+}
+
+func (r *request) ParamValues(name string) (values []string, found bool) {
+	values, found = r.params[name]
+	return
 }
 
 type Response interface {
@@ -138,7 +145,8 @@ func (s *server) createRequest(r *http.Request) (*request, error) {
 	}
 
 	req := &request{
-		body: content,
+		body:   content,
+		params: map[string][]string(r.URL.Query()),
 	}
 	return req, err
 }

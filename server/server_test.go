@@ -144,6 +144,34 @@ var _ = Describe("Server", func() {
 				})
 			})
 
+			Context("when an actual route is called with query params", func() {
+				BeforeEach(func() {
+					handler = new(fakes.FakeHandler)
+					handler.BindingReturns(Binding{
+						Method: "GET",
+						Path:   "/foo",
+					})
+
+					handler.HandleStub = func(req Request, resp Response) {
+						userValue, _ := req.ParamValues("user")
+						happyValue, _ := req.ParamValues("happy")
+
+						Expect(userValue).To(Equal([]string{"me"}))
+						Expect(happyValue).To(Equal([]string{"true"}))
+
+						resp.SetStatusCode(http.StatusOK)
+					}
+
+					server.Register(handler)
+					_, status, _ = doGet("/foo?user=me&happy=true")
+				})
+
+				It("should return status code 200 OK", func() {
+					Expect(status).To(Equal(http.StatusOK))
+				})
+
+			})
+
 			Context("when an actual route is called with different method", func() {
 				BeforeEach(func() {
 					response_body, status, err = doGet("/foo/bar")
