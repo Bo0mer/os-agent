@@ -12,7 +12,7 @@ type JobStore interface {
 }
 
 type jobStore struct {
-	m    sync.Mutex
+	m    sync.RWMutex
 	jobs map[string]model.Job
 }
 
@@ -29,6 +29,8 @@ func (s *jobStore) Set(job model.Job) {
 }
 
 func (s *jobStore) Get(id string) (job model.Job, found bool) {
+	s.m.RLock()
 	job, found = s.jobs[id]
+	s.m.RUnlock()
 	return
 }
