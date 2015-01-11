@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	configuration "github.com/Bo0mer/os-agent/config"
 	"github.com/Bo0mer/os-agent/facade"
 	"github.com/Bo0mer/os-agent/jobstore"
 	. "github.com/Bo0mer/os-agent/masterclient"
@@ -17,18 +19,25 @@ import (
 )
 
 func main() {
+	configDir := os.Getenv("OS_AGENT_CONFIG_DIR")
+	configFile := fmt.Sprintf("%s%s", configDir, "/config.yml")
+	config, err := configuration.LoadConfig(configFile)
+	if err != nil {
+		l4g.Error("Could not load configuration. Error: %s", err)
+		panic("Could not load configuration!")
+	}
 
 	osAgentFacade := facade.NewOSAgentFacade(executor.NewExecutor(), jobstore.NewJobStore())
 
 	createJobHandler := server.NewHandler("POST", "/jobs", osAgentFacade.CreateJob)
 	getJobHandler := server.NewHandler("GET", "/jobs", osAgentFacade.GetJob)
 
-	s := server.NewServer("127.0.0.1", 8080)
+	s := server.NewServer(config.Server.Host, config.Server.Port)
 	s.Register(createJobHandler)
 	s.Register(getJobHandler)
 
 	l4g.Info("Starting HTTP server...")
-	err := s.Start()
+	err = s.Start()
 	if err != nil {
 		l4g.Error("Unable to start server", err)
 		return
@@ -36,12 +45,12 @@ func main() {
 	l4g.Info("Start successful.")
 
 	self := model.Slave{
-		Id:   "unique-id",
-		Host: "127.0.0.1",
-		Port: 8080,
+		Id:   config.Id,
+		Host: config.Host,
+		Port: config.Port,
 	}
 
-	c := NewMasterClient("http://127.0.0.1", self)
+	c := NewMasterClient(config.Master.URL, self)
 	stop := make(chan struct{})
 	go sendHeartbeat(c, stop)
 
