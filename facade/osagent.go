@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	l4g "code.google.com/p/log4go"
+
 	"github.com/Bo0mer/executor"
 	execModel "github.com/Bo0mer/executor/model"
 
@@ -35,6 +37,7 @@ func NewOSAgentFacade(e executor.Executor, jobStore JobStore) OSAgentFacade {
 func (f *osAgentFacade) CreateJob(req server.Request, resp server.Response) {
 	jobRequest, err := f.createJobRequest(req.Body())
 	if err != nil {
+		l4g.Error("Unable to parse create job request", err)
 		resp.SetStatusCode(http.StatusBadRequest)
 		return
 	}
@@ -52,6 +55,7 @@ func (f *osAgentFacade) CreateJob(req server.Request, resp server.Response) {
 func (f *osAgentFacade) GetJob(req server.Request, resp server.Response) {
 	jobIdValues, found := req.ParamValues("id")
 	if !found || len(jobIdValues) > 1 {
+		l4g.Error("Unable to get job. Query params %s", jobIdValues)
 		resp.SetStatusCode(http.StatusBadRequest)
 		return
 	}
@@ -59,6 +63,7 @@ func (f *osAgentFacade) GetJob(req server.Request, resp server.Response) {
 	jobId := jobIdValues[0]
 	job, found := f.jobs.Get(jobId)
 	if !found {
+		l4g.Info("Unable to find job with id %s", jobId)
 		resp.SetStatusCode(http.StatusNotFound)
 		return
 	}
@@ -68,6 +73,7 @@ func (f *osAgentFacade) GetJob(req server.Request, resp server.Response) {
 
 func (f *osAgentFacade) executeCommandAsync(cmd *execModel.Command, resp server.Response) {
 	job := f.createJob()
+	l4g.Info("Executing async command %v", *cmd)
 	resultChan := f.executor.ExecuteAsync(*cmd)
 	go f.waitForCommandResult(resultChan, job)
 
@@ -76,6 +82,7 @@ func (f *osAgentFacade) executeCommandAsync(cmd *execModel.Command, resp server.
 
 func (f *osAgentFacade) executeCommand(cmd *execModel.Command, resp server.Response) {
 	job := f.createJob()
+	l4g.Info("Executing command %v", *cmd)
 	resultChan := f.executor.ExecuteAsync(*cmd)
 	f.waitForCommandResult(resultChan, job)
 

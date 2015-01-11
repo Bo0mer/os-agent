@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +9,7 @@ import (
 	"github.com/Bo0mer/os-agent/jobstore"
 	"github.com/Bo0mer/os-agent/server"
 
+	l4g "code.google.com/p/log4go"
 	"github.com/Bo0mer/executor"
 )
 
@@ -24,18 +24,18 @@ func main() {
 	s.Register(createJobHandler)
 	s.Register(getJobHandler)
 
-	fmt.Println("Starting...")
+	l4g.Info("Starting HTTP server...")
 	err := s.Start()
 	if err != nil {
-		fmt.Println(err.Error())
+		l4g.Error("Unable to start server", err)
 		return
 	}
-	fmt.Println("Start successful.")
+	l4g.Info("Start successful.")
 	osChan := make(chan os.Signal)
 	signal.Notify(osChan, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT)
 
 	<-osChan
-	fmt.Println("Shtutting down...")
+	l4g.Info("Shtutting down HTTP server...")
 	s.Stop()
-	fmt.Println("Shutdown successsful.")
+	l4g.Info("Shutdown successsful.")
 }
