@@ -1,0 +1,11 @@
+---
+id: "unique-id"
+host: "127.0.0.1"
+port: 8080
+
+server:
+    host: "127.0.0.1"
+    port: 8080
+
+master:
+    url: "127.0.0.1"
