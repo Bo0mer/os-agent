@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	. "github.com/Bo0mer/os-agent/masterclient"
+	"github.com/Bo0mer/os-agent/model"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,11 +14,17 @@ import (
 var _ = Describe("MasterClient", func() {
 
 	var fakeServer *ghttp.Server
+	var self model.Slave
 	var masterClient MasterClient
 
 	BeforeEach(func() {
 		fakeServer = ghttp.NewServer()
-		masterClient = NewMasterClient(fakeServer.URL())
+		self = model.Slave{
+			Id:   "self-id",
+			Host: "127.0.0.1",
+			Port: 80,
+		}
+		masterClient = NewMasterClient(fakeServer.URL(), self)
 	})
 
 	Describe("Register", func() {
@@ -40,6 +47,7 @@ var _ = Describe("MasterClient", func() {
 			BeforeEach(func() {
 				fakeServer.AppendHandlers(ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", "/register"),
+					ghttp.VerifyJSONRepresenting(self),
 					ghttp.RespondWithJSONEncoded(http.StatusOK, []byte{})),
 				)
 			})

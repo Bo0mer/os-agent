@@ -2,11 +2,14 @@ package masterclient
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/Bo0mer/os-agent/model"
 )
 
 type MasterClient interface {
@@ -14,12 +17,14 @@ type MasterClient interface {
 }
 
 type masterClient struct {
+	self       model.Slave
 	httpClient *http.Client
 	masterURL  string
 }
 
-func NewMasterClient(masterUrl string) MasterClient {
+func NewMasterClient(masterUrl string, self model.Slave) MasterClient {
 	return &masterClient{
+		self:       self,
 		httpClient: new(http.Client),
 		masterURL:  strings.TrimSuffix(masterUrl, "/"),
 	}
@@ -28,7 +33,8 @@ func NewMasterClient(masterUrl string) MasterClient {
 func (c *masterClient) Register() error {
 	// no need to send any data,
 	// just say that we're alive
-	_, err := c.doPost("/register", []byte{})
+	data, _ := json.Marshal(c.self)
+	_, err := c.doPost("/register", data)
 	return err
 }
 

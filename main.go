@@ -9,6 +9,7 @@ import (
 	"github.com/Bo0mer/os-agent/facade"
 	"github.com/Bo0mer/os-agent/jobstore"
 	. "github.com/Bo0mer/os-agent/masterclient"
+	"github.com/Bo0mer/os-agent/model"
 	"github.com/Bo0mer/os-agent/server"
 
 	l4g "code.google.com/p/log4go"
@@ -34,7 +35,13 @@ func main() {
 	}
 	l4g.Info("Start successful.")
 
-	c := NewMasterClient("http://127.0.0.1")
+	self := model.Slave{
+		Id:   "unique-id",
+		Host: "127.0.0.1",
+		Port: 8080,
+	}
+
+	c := NewMasterClient("http://127.0.0.1", self)
 	stop := make(chan struct{})
 	go sendHeartbeat(c, stop)
 
