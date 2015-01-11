@@ -63,7 +63,7 @@ func (f *osAgentFacade) GetJob(req server.Request, resp server.Response) {
 	jobId := jobIdValues[0]
 	job, found := f.jobs.Get(jobId)
 	if !found {
-		l4g.Info("Unable to find job with id %s", jobId)
+		l4g.Error("Unable to find job with id %s", jobId)
 		resp.SetStatusCode(http.StatusNotFound)
 		return
 	}
@@ -73,7 +73,7 @@ func (f *osAgentFacade) GetJob(req server.Request, resp server.Response) {
 
 func (f *osAgentFacade) executeCommandAsync(cmd *execModel.Command, resp server.Response) {
 	job := f.createJob()
-	l4g.Info("Executing async command %v", *cmd)
+	l4g.Debug("Executing async command %v", *cmd)
 	resultChan := f.executor.ExecuteAsync(*cmd)
 	go f.waitForCommandResult(resultChan, job)
 
@@ -82,7 +82,7 @@ func (f *osAgentFacade) executeCommandAsync(cmd *execModel.Command, resp server.
 
 func (f *osAgentFacade) executeCommand(cmd *execModel.Command, resp server.Response) {
 	job := f.createJob()
-	l4g.Info("Executing command %v", *cmd)
+	l4g.Debug("Executing command %v", *cmd)
 	resultChan := f.executor.ExecuteAsync(*cmd)
 	f.waitForCommandResult(resultChan, job)
 
@@ -103,6 +103,8 @@ func (f *osAgentFacade) waitForCommandResult(resultChan <-chan execModel.Command
 	}
 
 	job.Result.Error = errorString
+
+	l4g.Debug("Accquired job result %v", job)
 
 	f.jobs.Set(job)
 }
