@@ -14,14 +14,16 @@ type Server interface {
 	Stop() error
 	Address() string
 	Register(handler Handler)
+	SetAuthenticator(a Authenticator)
 }
 
 type server struct {
-	host         string
-	port         int
-	listener     net.Listener
-	requestGroup sync.WaitGroup
-	handlers     []Handler
+	host          string
+	port          int
+	listener      net.Listener
+	requestGroup  sync.WaitGroup
+	handlers      []Handler
+	authenticator Authenticator
 }
 
 type Request interface {
@@ -111,9 +113,19 @@ func (s *server) Register(handler Handler) {
 	s.handlers = append(s.handlers, handler)
 }
 
+func (s *server) SetAuthenticator(a Authenticator) {
+	s.authenticator = a
+}
+
 func (s *server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	s.requestGroup.Add(1)
 	defer s.requestGroup.Done()
+
+	ok := s.authenticate(r)
+	if !ok {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 
 	// find handler to handle the reuqest
 	handler, found := s.findHandler(r)
@@ -136,6 +148,23 @@ func (s *server) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(response.StatusCode())
 	bytes.NewBuffer(response.body).WriteTo(w)
+}
+
+func (s *server) authenticate(r *http.Request) bool {
+	if s.authenticator == nil {
+		return true
+	}
+
+	username, password, ok := r.BasicAuth()
+	if !ok {
+		return false
+	}
+
+	ok = s.authenticator.Authenticate(username, password)
+	if !ok {
+		return false
+	}
+	return true
 }
 
 func (s *server) createRequest(r *http.Request) (*request, error) {

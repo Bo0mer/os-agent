@@ -37,21 +37,40 @@ var _ = Describe("Server", func() {
 		return doAction(http.Get(url))
 	}
 
+	var doPostWithAuthentication = func(path, username, password, bodyType string, body []byte) ([]byte, int, error) {
+		url := fmt.Sprintf("http://%s%s", server.Address(), path)
+
+		request, _ := http.NewRequest("POST", url, bytes.NewBuffer(body))
+		request.SetBasicAuth(username, password)
+
+		client := &http.Client{}
+		return doAction(client.Do(request))
+	}
+
 	Context("when the server is started with invalid address", func() {
 		BeforeEach(func() {
-			server = NewServer("n0t_val1d_h0s7", 0)
+			server = NewServer("@*(&$!*!&$", 0)
 			err = server.Start()
+		})
+
+		AfterEach(func() {
+			server.Stop()
 		})
 
 		It("should return an error", func() {
 			Expect(err).To(HaveOccurred())
 		})
+
 	})
 
 	Context("when the server is started with invalid port", func() {
 		BeforeEach(func() {
 			server = NewServer("127.0.0.1", -500)
 			err = server.Start()
+		})
+
+		AfterEach(func() {
+			server.Stop()
 		})
 
 		It("should return an error", func() {
@@ -104,6 +123,16 @@ var _ = Describe("Server", func() {
 			var status int
 			var err error
 
+			itShouldBehaveLikeUnauthorizedRequest := func() {
+				It("should return status code not authorized", func() {
+					Expect(status).To(Equal(http.StatusUnauthorized))
+				})
+
+				It("the response body should be emtpy", func() {
+					Expect(response_body).To(BeEmpty())
+				})
+			}
+
 			BeforeEach(func() {
 				body = []byte("request body")
 
@@ -142,6 +171,63 @@ var _ = Describe("Server", func() {
 				It("the server should have returned the proper response", func() {
 					Expect(response_body).To(Equal(body))
 				})
+			})
+
+			Context("when authentication is required and present", func() {
+				var actualUsername string
+				var actualPassword string
+
+				BeforeEach(func() {
+					authenticatorFunc := func(username, password string) bool {
+						actualUsername, actualPassword = username, password
+						return true
+					}
+					server.SetAuthenticator(NewSimpleAuthenticator(authenticatorFunc))
+
+					response_body, status, err = doPostWithAuthentication("/foo/bar", "ivan", "secret", "text/plain", body)
+				})
+
+				It("should have called the authenticator with proper username and password", func() {
+					Expect(actualUsername).To(Equal("ivan"))
+					Expect(actualPassword).To(Equal("secret"))
+				})
+
+				It("should have returned status code 200 ok", func() {
+					Expect(status).To(Equal(http.StatusOK))
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should have returned the response body", func() {
+					Expect(response_body).To(Equal(body))
+				})
+
+			})
+
+			Context("when authentication is required but not present", func() {
+				BeforeEach(func() {
+					authenticatorFunc := func(username, password string) bool {
+						return true
+					}
+					server.SetAuthenticator(NewSimpleAuthenticator(authenticatorFunc))
+					response_body, status, _ = doPost("/foo/bar", "text/plain", body)
+				})
+
+				itShouldBehaveLikeUnauthorizedRequest()
+
+			})
+
+			Context("when authentication is required but fake one is given", func() {
+
+				BeforeEach(func() {
+					authenticatorFunc := func(username, password string) bool {
+						return false
+					}
+					server.SetAuthenticator(NewSimpleAuthenticator(authenticatorFunc))
+					response_body, status, err = doPostWithAuthentication("/foo/bar", "ivan", "secret", "text/plain", body)
+				})
+
+				itShouldBehaveLikeUnauthorizedRequest()
+
 			})
 
 			Context("when an actual route is called with query params", func() {
