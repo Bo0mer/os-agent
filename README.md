@@ -23,3 +23,50 @@ You need to have gingko installed.
 ```bash
 ginkgo -r
 ```
+
+## API
+
+Following is the API that is provided by the OS-Agent for executing commands.
+
+The response codes that are returned by the OS-Agent are splitted into the following groups:
+
+| Group | Description |
+| ---- | ----------- |
+| 2XX | The requested operation completed successfully. |
+| 4XX | There was a problem with the request payload. |
+| 5XX | Execution of the operation failed due to some unexpected reason. |
+
+**Payload**
+
+The API is based on JSON request and responses. If not stated otherwise, default content-type should be `application/json`.
+
+### Create Job
+
+`POST /jobs`
+
+**Request**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| async | boolean | Indicates whether the execution should be sync or async. |
+| command | struct | Properties of the command. |
+
+Example Request:
+
+```JSON
+
+```
+
+**Response**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| id | string | The id of the job. |
+| status | string | The status of the job. Either `IN_PROCESS` or `COMPLETED` |
+| result | struct | The result of the command execution. |
+
+Example Response:
+
+```JSON
+
+```
