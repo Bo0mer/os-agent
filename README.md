@@ -54,7 +54,23 @@ The API is based on JSON request and responses. If not stated otherwise, default
 Example Request:
 
 ```JSON
-
+{
+    "async": true,
+    "command": {
+        "name": "cat",
+        "args": [
+            "arg1",
+            "arg2"
+        ],
+        "env": {
+            "variable_name1": "value1",
+            "variable_name2": "value2"
+        },
+        "use_isolated_env": false,
+        "working_dir": "/home/agent/whoa",
+        "input": "This is the input to the cat command."
+    }
+}
 ```
 
 **Response**
@@ -68,5 +84,47 @@ Example Request:
 Example Response:
 
 ```JSON
+{
+    "id": "jobid",
+    "status": "COMPLETED",
+    "result": {
+        "stdout": "blabla",
+        "stderr": "",
+        "exit_code": 0,
+        "error": ""
+    }
+}
+```
 
+### Get Job by Id
+`GET /jobs?id=<job_id>`
+
+**Request**
+
+No data should be provided here.
+
+**Response**
+
+
+**Response**
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| id | string | The id of the job. |
+| status | string | The status of the job. Either `IN_PROCESS` or `COMPLETED` |
+| result | struct | The result of the command execution. |
+
+Example Response:
+
+```JSON
+{
+    "id": "jobid",
+    "status": "COMPLETED",
+    "result": {
+        "stdout": "blabla",
+        "stderr": "",
+        "exit_code": 0,
+        "error": ""
+    }
+}
 ```
