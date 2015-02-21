@@ -6,6 +6,11 @@ port: 8080
 server:
     host: "127.0.0.1"
     port: 8080
+    auth:
+      enabled: true
+      user: "admin"
+      password: "s3cre7"
 
 master:
     url: "http://127.0.0.1:8081"
+

@@ -19,25 +19,19 @@ import (
 )
 
 func main() {
-	configDir := os.Getenv("OS_AGENT_CONFIG_DIR")
-	configFile := fmt.Sprintf("%s%s", configDir, "/config.yml")
-	config, err := configuration.LoadConfig(configFile)
-	if err != nil {
-		l4g.Error("Could not load configuration. Error: %s", err)
-		panic("Could not load configuration!")
-	}
+	config := loadConfiguration()
+	s := createServer(config.Server)
 
 	osAgentFacade := facade.NewOSAgentFacade(executor.NewExecutor(), jobstore.NewJobStore())
 
 	createJobHandler := server.NewHandler("POST", "/jobs", osAgentFacade.CreateJob)
 	getJobHandler := server.NewHandler("GET", "/jobs", osAgentFacade.GetJob)
 
-	s := server.NewServer(config.Server.Host, config.Server.Port)
 	s.Register(createJobHandler)
 	s.Register(getJobHandler)
 
 	l4g.Info("Starting HTTP server...")
-	err = s.Start()
+	err := s.Start()
 	if err != nil {
 		l4g.Error("Unable to start server", err)
 		return
@@ -65,10 +59,41 @@ func main() {
 	l4g.Info("Shutdown successsful.")
 }
 
+func loadConfiguration() configuration.OSAgentConfig {
+	configDir := os.Getenv("OS_AGENT_CONFIG_DIR")
+	configFile := fmt.Sprintf("%s%s", configDir, "/config.yml")
+	config, err := configuration.LoadConfig(configFile)
+	if err != nil {
+		l4g.Error("Could not load configuration. Error: %s", err)
+		panic("Could not load configuration!")
+	}
+	return config
+}
+
+func createServer(conf configuration.ServerConfig) server.Server {
+	s := server.NewServer(conf.Host, conf.Port)
+	if conf.Auth.Enabled {
+		simpleAuthenticator := createSimpleAuthenticator(conf.Auth.User, conf.Auth.Password)
+		s.SetAuthenticator(simpleAuthenticator)
+	}
+	return s
+}
+
+func createSimpleAuthenticator(username, password string) server.Authenticator {
+	authFunc := func(un, pwd string) bool {
+		if un == username && pwd == password {
+			return true
+		}
+		return false
+	}
+
+	return server.NewSimpleAuthenticator(authFunc)
+}
+
 func sendHeartbeat(c MasterClient, stop <-chan struct{}) {
 	for {
 		select {
-		case <-time.After(time.Minute * 5):
+		case <-time.After(time.Second * 5):
 			sendRegister(c)
 		case <-stop:
 			l4g.Debug("Stop heartbeat sending.")

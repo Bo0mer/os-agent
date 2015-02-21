@@ -15,12 +15,19 @@ type OSAgentConfig struct {
 }
 
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Host string     `yaml:"host"`
+	Port int        `yaml:"port"`
+	Auth AuthConfig `yaml:"auth"`
 }
 
 type MasterConfig struct {
 	URL string `yaml:"url"`
+}
+
+type AuthConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 }
 
 func LoadConfig(configFile string) (OSAgentConfig, error) {
