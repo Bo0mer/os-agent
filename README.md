@@ -1,12 +1,26 @@
 os-agent
 ========
 
-HTTP Server acting as an OS agent written in Go
+HTTP Server acting as an OS agent written in Go. Executes OS commands on demand. Sync or async.
 
 ## Running it
 
 ### Configuration
 Create configuration directory, which should contain `config.yml` file. You can preview example config file in the config/config.yml.
+
+Following is description of each property of the file.
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| id | string | The unique id of the os-agent. Should not collide with other agents around the world. |
+| host | string | The host where the agent is running. This field is sent to it's master. |
+| port | int | The port where the agent is running. This field is sent to it's master. |
+| server.host | string | Specifies on which host to run the http server. |
+| server.port | int | Specifies on which port to run the http server. |
+| server.auth.enabled | boolean | Specifies whether BasicAuth should be enabled. |
+| server.auth.user | string | If BasicAuth is enabled, specifies the user that is allowed to request the server. |
+| server.auth.password | string | If BasicAuth is enabled, specifies the password for the requests. |
+| master.url | string | Specifies the URL of it's master. |
 
 When you're done with the file, you should provide the config to the application by exporting a env variable `OS_AGENT_CONFIG_DIR` containing the full path to the directory, where your config.yml file is stored.
 
