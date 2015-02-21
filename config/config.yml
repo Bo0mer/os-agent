@@ -13,4 +13,5 @@ server:
 
 master:
     url: "http://127.0.0.1:8081"
+    heartbeat_interval: 60
 

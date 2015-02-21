@@ -46,7 +46,7 @@ func main() {
 
 	c := NewMasterClient(config.Master.URL, self)
 	stop := make(chan struct{})
-	go sendHeartbeat(c, stop)
+	go sendHeartbeat(config.Master.HeartbeatInterval, c, stop)
 
 	osChan := make(chan os.Signal)
 	signal.Notify(osChan, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGINT)
@@ -90,10 +90,11 @@ func createSimpleAuthenticator(username, password string) server.Authenticator {
 	return server.NewSimpleAuthenticator(authFunc)
 }
 
-func sendHeartbeat(c MasterClient, stop <-chan struct{}) {
+func sendHeartbeat(interval int, c MasterClient, stop <-chan struct{}) {
+	sendRegister(c)
 	for {
 		select {
-		case <-time.After(time.Second * 5):
+		case <-time.After(time.Second * time.Duration(interval)):
 			sendRegister(c)
 		case <-stop:
 			l4g.Debug("Stop heartbeat sending.")

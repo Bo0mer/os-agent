@@ -46,6 +46,7 @@ var _ = Describe("Config", func() {
 
 		It("should have the master configuration", func() {
 			Expect(config.Master.URL).To(Equal("http://127.0.0.1:8081"))
+			Expect(config.Master.HeartbeatInterval).To(Equal(60))
 		})
 
 	})

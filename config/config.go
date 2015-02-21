@@ -21,7 +21,8 @@ type ServerConfig struct {
 }
 
 type MasterConfig struct {
-	URL string `yaml:"url"`
+	URL               string `yaml:"url"`
+	HeartbeatInterval int    `yaml:"heartbeat_interval"`
 }
 
 type AuthConfig struct {
