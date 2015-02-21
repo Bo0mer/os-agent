@@ -74,8 +74,7 @@ var _ = Describe("Server", func() {
 		})
 
 		It("should return an error", func() {
-			// broken on Windows for some reason
-			// Expect(err).To(HaveOccurred())
+			Expect(err).To(HaveOccurred())
 		})
 	})
 
